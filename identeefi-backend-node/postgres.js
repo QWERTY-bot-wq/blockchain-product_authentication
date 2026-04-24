@@ -73,17 +73,49 @@ const storageProfile = multer.diskStorage({
     }
 })
 
-function addProduct(serialNumber, name , brand){
-    client.query('INSERT INTO product (serialNumber, name, brand) VALUES ($1, $2, $3)', 
-        [serialNumber, name, brand], (err, res)=>{
-            if(err){
-                console.log(err.message);
-            }else{
-                console.log('Data insert successful');
-            }
-        })
+function addProduct(
+    serialNumber,
+    name,
+    brand,
+    description,
+    manufactureDate
+) {
+    let formattedDate = null;
 
+    if (manufactureDate) {
+        if (typeof manufactureDate === "number") {
+            formattedDate = new Date(manufactureDate * 1000);
+        } else {
+            formattedDate = new Date(manufactureDate);
+        }
+
+        if (isNaN(formattedDate.getTime())) {
+            console.log("Invalid manufactureDate received:", manufactureDate);
+            formattedDate = null;
+        }
+    }
+
+    client.query(
+        `INSERT INTO product 
+        (serialnumber, name, brand, description, manufacture_date)
+        VALUES ($1, $2, $3, $4, $5)`,
+        [
+            serialNumber,
+            name,
+            brand,
+            description,
+            formattedDate
+        ],
+        (err, res) => {
+            if (err) {
+                console.log("Add product error:", err.message);
+            } else {
+                console.log("Product inserted successfully");
+            }
+        }
+    );
 }
+
 
 
 // auth
@@ -94,12 +126,26 @@ app.get('/authAll', async (req, res)=>{
     console.log("Data sent successfully");
 });
 
-app.post('/auth/:username/:password', async (req, res)=>{
-    const {username, password} = req.params;
-    const data =  await client.query(`SELECT * FROM auth WHERE username = '${username}' AND password = '${password}'`);
-    res.send(data.rows);
-    console.log("Data sent successfully");
+app.post('/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const data = await client.query(
+            'SELECT * FROM auth WHERE username = $1 AND password = $2',
+            [username, password]
+        );
+
+        if (data.rows.length === 0) {
+            return res.status(401).send({ error: 'Invalid credentials' });
+        }
+
+        res.send(data.rows);
+        console.log("Login successful");
+    } catch (err) {
+        console.error("Login error:", err.message);
+        res.status(500).send({ error: 'Server error during login' });
+    }
 });
+
 
 app.post('/addaccount', (req, res)=>{
     const {username, password, role} = req.body;
@@ -189,17 +235,24 @@ app.get('/product/serialNumber', async (req, res)=>{
     res.send(data.rows);
 });
 
-app.post('/addproduct', (req, res)=>{
-    const {serialNumber, name, brand} = req.body;
-    addProduct(serialNumber, name, brand);
-    res.send('Data inserted');
+app.post('/addproduct', (req, res) => {
+    const {
+        serialNumber,
+        name,
+        brand,
+        description,
+        manufactureDate
+    } = req.body;
 
-});
+    addProduct(
+        serialNumber,
+        name,
+        brand,
+        description,
+        manufactureDate
+    );
 
-app.post('/addproduct', (req, res)=>{
-    const {serialNumber, name, brand} = req.body;
-    addProduct(serialNumber, name, brand);
-    res.send('Data inserted');
+    res.send("Product inserted");
 });
 
 // TEST DATABASE CONNECTION

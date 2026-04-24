@@ -224,24 +224,29 @@ const AddProduct = () => {
     });
 };
 
-
-
     const addProductDB = async () => {
-        try {
-            const profileData = JSON.stringify({
-                "serialNumber": serialNumber,
-                "name": name,
-                "brand": brand,
-            });
+    try {
+        const payload = {
+            serialNumber,
+            name,
+            brand,
+            description: description.replace(/\n/g, ' ').trim(),
+            manufactureDate: manuDate
+        };
 
-            await axios.post('http://localhost:5000/addproduct', profileData, {
-                headers: { 'Content-Type': 'application/json' },
-            });
+        console.log("📤 Sending to backend:", payload);
 
-        } catch (err) {
-            console.log(err);
-        }
+        await axios.post(
+            'http://localhost:5000/addproduct',
+            payload,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+
+    } catch (err) {
+        console.error("❌ DB insert error:", err);
+    }
     };
+
 
 
     const checkUnique = async () => {

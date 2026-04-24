@@ -12,7 +12,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
-const LOGIN_URL = '/auth';
+const LOGIN_URL = 'http://localhost:5000/auth/login';
 
 export default function Login() {
     const { setAuth } = useAuth();
@@ -39,10 +39,10 @@ export default function Login() {
         console.log('pwd: ', pwd);
 
         try {
-            const res = await axios.post(`${LOGIN_URL}/${user}/${pwd}`,
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                });
+            const res = await axios.post(LOGIN_URL,
+                 { username: user, password: pwd },
+                 { headers: { 'Content-Type': 'application/json' } } 
+                );
 
             console.log(res?.data[0])
 
