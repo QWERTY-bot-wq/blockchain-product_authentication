@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { Client } = require('pg')
+const { Client, types } = require('pg')
+
+// Fix date parsing issue
+types.setTypeParser(1082, (val) => val);
 const path = require('path');
 const multer = require('multer');
 
@@ -80,20 +83,7 @@ function addProduct(
     description,
     manufactureDate
 ) {
-    let formattedDate = null;
-
-    if (manufactureDate) {
-        if (typeof manufactureDate === "number") {
-            formattedDate = new Date(manufactureDate * 1000);
-        } else {
-            formattedDate = new Date(manufactureDate);
-        }
-
-        if (isNaN(formattedDate.getTime())) {
-            console.log("Invalid manufactureDate received:", manufactureDate);
-            formattedDate = null;
-        }
-    }
+    let formattedDate = manufactureDate || null;
 
     client.query(
         `INSERT INTO product 
